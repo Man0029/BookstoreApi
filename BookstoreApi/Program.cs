@@ -12,6 +12,7 @@ builder.Services.AddSwaggerGen();
 var connectionString = builder.Configuration.GetConnectionString("BookstoreApiConnection");
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(connectionString));
 builder.Services.AddScoped<IBookRepository, SQLBookRepository>();
+builder.Services.AddScoped<IAuthorRepository, SQLAuthorRepository>();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
