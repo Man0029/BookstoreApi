@@ -1,7 +1,11 @@
-﻿namespace BookstoreApi.Models.DTO
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace BookstoreApi.Models.DTO
 {
     public class AddBookRequestDTO
     {
+        [Required]
+        [MinLength(10)]
         public string? Title { get; set; }
         public string? Description { get; set; }
         public bool IsRead { get; set; }
