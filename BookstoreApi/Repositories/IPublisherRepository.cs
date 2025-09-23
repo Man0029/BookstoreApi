@@ -7,6 +7,7 @@ namespace BookstoreApi.Repositories
     {
         List<PublisherDTO> GetAllPublishers();
         PublisherNoIdDTO GetPublisherById(int id);
+        PublisherNoIdDTO GetPublisherByName(string name);
         AddPublisherRequestDTO AddPublisher(AddPublisherRequestDTO addPublisherRequestDTO);
         PublisherNoIdDTO UpdatePublisherById(int id, PublisherNoIdDTO publisherNoIdDTO);
         Publisher? DeletePublisherById(int id);

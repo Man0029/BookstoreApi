@@ -30,6 +30,16 @@ namespace BookstoreApi.Repositories
             }).FirstOrDefault();
             return publisherWithIdDTO!;
         }
+        public PublisherNoIdDTO GetPublisherByName(string name)
+        {
+            var publisherWithDomain = _dbContext.Publishers.Where(n => n.Name == name);
+            //Map Domain Model to DTOs
+            var publisherWithIdDTO = publisherWithDomain.Select(publisher => new PublisherNoIdDTO()
+            {
+                Name = publisher.Name,
+            }).FirstOrDefault();
+            return publisherWithIdDTO!;
+        }
         public AddPublisherRequestDTO AddPublisher(AddPublisherRequestDTO addPublisherRequestDTO)
         {
             //map DTO to Domain Model
@@ -40,10 +50,7 @@ namespace BookstoreApi.Repositories
             _dbContext.Publishers.Add(publisherDomainModel);
             _dbContext.SaveChanges();
             //map Domain Model to DTO
-            return new AddPublisherRequestDTO
-            {
-                Name = publisherDomainModel.Name,
-            };
+            return addPublisherRequestDTO;
         }
         public PublisherNoIdDTO UpdatePublisherById(int id, PublisherNoIdDTO publisherNoIdDTO)
         {

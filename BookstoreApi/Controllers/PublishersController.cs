@@ -4,6 +4,8 @@ using BookstoreApi.Models.DTO;
 using BookstoreApi.Repositories;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 namespace BookstoreApi.Controllers
 {
     [Route("api/[controller]")]
@@ -38,12 +40,13 @@ namespace BookstoreApi.Controllers
         [Route("Add")]
         public IActionResult AddPublisher([FromBody] AddPublisherRequestDTO addPublisherRequestDTO)
         {
-            var newPublisher = _publisherRepository.AddPublisher(addPublisherRequestDTO);
-            if(newPublisher == null)
+            if(ValidateAddPublisher(addPublisherRequestDTO))
             {
-                return NotFound();
+                var pubadd = _publisherRepository.AddPublisher(addPublisherRequestDTO);
+                return Ok(pubadd);
             }
-            return Ok(newPublisher);
+
+            return BadRequest(ModelState);
         }
         [HttpPut]
         [Route("{id:int}")]
@@ -67,5 +70,30 @@ namespace BookstoreApi.Controllers
             }
             return Ok(deletedPublisher);
         }
+        #region Private Methods
+        private bool ValidateAddPublisher(AddPublisherRequestDTO a)
+        {
+            if (a == null)
+            {
+                ModelState.AddModelError(nameof(a), $"Please add Pub data");
+                return false;
+            }
+            // kiem tra 
+            if (string.IsNullOrEmpty(a.Name)|| a.Name.Length < 5)
+            {
+                ModelState.AddModelError(nameof(a.Name), $"{nameof(a.Name)} must be more 5 letter");
+            }
+            if (_appdbContext.Publishers.Any(p => p.Name != null && EF.Functions.Like(p.Name, a.Name)))
+            {
+                ModelState.AddModelError(nameof(a.Name), $"{nameof(a.Name)} has a Pub same name");
+            }
+
+            if (ModelState.ErrorCount > 0)
+            {
+                return false;
+            }
+            return true;
+        }
+        #endregion
     }
 }

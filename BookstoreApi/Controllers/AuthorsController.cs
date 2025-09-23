@@ -1,7 +1,10 @@
 ﻿using BookstoreApi.Data;
+using BookstoreApi.Models.DTO;
 using BookstoreApi.Repositories;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
+
 
 namespace BookstoreApi.Controllers
 {
@@ -10,9 +13,11 @@ namespace BookstoreApi.Controllers
     public class AuthorsController : ControllerBase
     {
         private readonly AppDbContext _dbContext;
-        public AuthorsController(AppDbContext dbContext)
+        private readonly IAuthorRepository _authorsRepository;
+        public AuthorsController(AppDbContext dbContext, IAuthorRepository authorRepository)
         {
             _dbContext = dbContext;
+            _authorsRepository = authorRepository;
         }
         [HttpGet("GetAll")]
         public IActionResult GetAll()
@@ -30,11 +35,16 @@ namespace BookstoreApi.Controllers
             return Ok(author);
         }
         [HttpPost("Add")]
-        public IActionResult Add(Models.Domain.Author author)
+        [ValidateModel]
+        public IActionResult Add([FromBody] AddAuthorRequestDTO author)
         {
-            _dbContext.Authors.Add(author);
-            _dbContext.SaveChanges();
-            return CreatedAtAction("GetById", new { id = author.Id }, author);
+            if (ValidateAddAuthor(author))
+            {
+                var authoradd = _authorsRepository.AddAuthor(author);
+
+                return Ok(authoradd);
+            }
+            return BadRequest(ModelState);
         }
         [HttpPut("Update/{id:int}")]
         public IActionResult Update(int id, Models.Domain.Author author)
@@ -60,5 +70,25 @@ namespace BookstoreApi.Controllers
             _dbContext.SaveChanges();
             return NoContent();
         }
+        #region private methods
+        private bool ValidateAddAuthor(AddAuthorRequestDTO addauthorRequestDTO)
+        {
+            if (addauthorRequestDTO == null)
+            {
+                ModelState.AddModelError(nameof(addauthorRequestDTO), $"Please add author data");
+                return false;
+            }
+            string fullNameTrimmed = addauthorRequestDTO.FullName?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(addauthorRequestDTO.FullName)||fullNameTrimmed.Length<3)
+            {
+                ModelState.AddModelError(nameof(addauthorRequestDTO.FullName), $"Please add full name of author(more 3 char)");
+            }
+            if (ModelState.ErrorCount > 0)
+            {
+                return false;
+            }
+            return true;
+        }
+        #endregion
     }
 }
