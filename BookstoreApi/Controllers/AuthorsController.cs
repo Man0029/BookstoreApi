@@ -4,6 +4,7 @@ using BookstoreApi.Repositories;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using System.Net.NetworkInformation;
 
 
 namespace BookstoreApi.Controllers
@@ -47,28 +48,25 @@ namespace BookstoreApi.Controllers
             return BadRequest(ModelState);
         }
         [HttpPut("Update/{id:int}")]
-        public IActionResult Update(int id, Models.Domain.Author author)
+        public IActionResult Update(int id, AuthorNoIdDTO nameauthor)
         {
-            var existingAuthor = _dbContext.Authors.Find(id);
-            if (existingAuthor == null)
+            var UpdateAuthor = _authorsRepository.UpdateAuthorById(id, nameauthor);
+            if (UpdateAuthor != null)
             {
-                return NotFound();
+                return Ok();
             }
-            existingAuthor.FullName = author.FullName;            
-            _dbContext.SaveChanges();
-            return NoContent();
+            return NotFound();
+
         }
         [HttpDelete("Delete/{id:int}")]
         public IActionResult Delete(int id)
         {
-            var existingAuthor = _dbContext.Authors.Find(id);
-            if (existingAuthor == null)
+            if (ValidateDeleteAuthor(id))
             {
-                return NotFound();
+                var author = _authorsRepository.DeleteAuthorById(id);
+                return Ok(author);
             }
-            _dbContext.Authors.Remove(existingAuthor);
-            _dbContext.SaveChanges();
-            return NoContent();
+            return BadRequest(ModelState);
         }
         #region private methods
         private bool ValidateAddAuthor(AddAuthorRequestDTO addauthorRequestDTO)
@@ -85,6 +83,24 @@ namespace BookstoreApi.Controllers
             }
             if (ModelState.ErrorCount > 0)
             {
+                return false;
+            }
+            return true;
+        }
+
+        private bool ValidateDeleteAuthor(int id)
+        {
+            var existingAuthor = _dbContext.Authors.Find(id);
+            if (existingAuthor == null)
+            {
+                ModelState.AddModelError(nameof(id), $"Not found author with id={id}");
+                return false;
+            }
+            // kiem tra ràng buộc khóa ngoại với bảng Book_Author
+            bool hasRelatedBooks = _dbContext.Book_Authors.Any(ba => ba.AuthorId == id);
+            if (hasRelatedBooks)
+            {
+                ModelState.AddModelError(nameof(id), $"Cannot delete author with id={id} because it is referenced by existing books.");
                 return false;
             }
             return true;

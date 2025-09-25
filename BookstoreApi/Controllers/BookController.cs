@@ -86,6 +86,22 @@ namespace BookstoreApi.Controllers
             {
                 ModelState.AddModelError(nameof(addBookRequestDTO.PublisherId), $"{nameof(addBookRequestDTO.PublisherId)} does not exist in database");
             }
+            //kiem tra AuthorIds co ton tai trong DB khong
+            foreach (var authorId in addBookRequestDTO.AuthorIds)
+            {
+                var authorSearch = _dbContext.Authors.Find(authorId);
+                if (authorSearch == null)
+                {
+                    ModelState.AddModelError(nameof(addBookRequestDTO.AuthorIds), $"{nameof(addBookRequestDTO.AuthorIds)} with id {authorId} does not exist in database");
+                }
+            }
+            //1 author khong duoc gan nhieu lan trong AuthorIds
+            var distinctAuthorIds = addBookRequestDTO.AuthorIds.Distinct().ToList();
+            if (distinctAuthorIds.Count != addBookRequestDTO.AuthorIds.Count)
+            {
+                ModelState.AddModelError(nameof(addBookRequestDTO.AuthorIds), $"{nameof(addBookRequestDTO.AuthorIds)} cannot have duplicate author IDs");
+            }
+
             if (ModelState.ErrorCount > 0)
             {
                 return false;

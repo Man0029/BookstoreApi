@@ -63,12 +63,13 @@ namespace BookstoreApi.Controllers
         [Route("{id:int}")]
         public IActionResult DeletePublisherById([FromRoute] int id)
         {
-            var deletedPublisher = _publisherRepository.DeletePublisherById(id);
-            if (deletedPublisher == null)
+            
+            if (ValidateDeletePublisher(id))
             {
-                return NotFound();
+                var deletedPublisher = _publisherRepository.DeletePublisherById(id);
+                return Ok();
             }
-            return Ok(deletedPublisher);
+            return BadRequest(ModelState);
         }
         #region Private Methods
         private bool ValidateAddPublisher(AddPublisherRequestDTO a)
@@ -88,6 +89,23 @@ namespace BookstoreApi.Controllers
                 ModelState.AddModelError(nameof(a.Name), $"{nameof(a.Name)} has a Pub same name");
             }
 
+            if (ModelState.ErrorCount > 0)
+            {
+                return false;
+            }
+            return true;
+        }
+
+        private bool ValidateDeletePublisher(int id)
+        {
+            if (!_appdbContext.Publishers.Any(p => p.Id == id))
+            {
+                ModelState.AddModelError(nameof(id), $"No Pub with id {id}");
+            }
+            if (_appdbContext.Books.Any(b => b.PublisherId == id))
+            {
+                ModelState.AddModelError(nameof(id), $"Cannot delete this Pub because it has related books");
+            }
             if (ModelState.ErrorCount > 0)
             {
                 return false;
