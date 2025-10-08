@@ -2,33 +2,46 @@
 using BookstoreApi.Models.Domain;
 using BookstoreApi.Models.DTO;
 using BookstoreApi.Repositories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using System.Runtime.ConstrainedExecution;
+using System.Text.Json;
 //Past3
 namespace BookstoreApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class BookController : ControllerBase
     {
         private readonly AppDbContext _dbContext;
         private readonly IBookRepository _bookRepository;
-        public BookController(AppDbContext dbContext, IBookRepository bookRepository)
+        private readonly ILogger<BookController> _logger;
+
+        public BookController(AppDbContext dbContext, IBookRepository bookRepository, ILogger<BookController> logger)
         {
             _dbContext = dbContext;
             _bookRepository = bookRepository;
+            _logger = logger;
         }
 
 
         [HttpGet("GetAll")]
+        [Authorize (Roles="Read")]
         public IActionResult GetAllBooks([FromQuery] string? filterOn, [FromQuery] string? filterQuery, [FromQuery] string? sortBy, [FromQuery] bool isAscending, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 100)
         {
+            _logger.LogInformation("GetAll Book Action method was invoked");
+            _logger.LogWarning("This is a warning log");
+            _logger.LogError("This is a error log");
             var allBooks = _bookRepository.GetAllBooks(filterOn, filterQuery);
+            _logger.LogInformation($"Finished GetAllBook request with data{JsonSerializer.Serialize(allBooks)}");
             return Ok(allBooks);
         }
 
         [HttpGet]
+        [Authorize(Roles = "Read")]
         [Route("get-book-by-id/{id}")]
         public IActionResult GetBookById([FromRoute] int id)
         {
@@ -38,6 +51,7 @@ namespace BookstoreApi.Controllers
 
         [HttpPost("add-book")]
         [ValidateModel]
+        [Authorize(Roles = "Write")]
         public IActionResult AddBook([FromBody] AddBookRequestDTO addBookRequestDTO)
         {
             if (ValidateAddBook(addBookRequestDTO))
@@ -49,12 +63,15 @@ namespace BookstoreApi.Controllers
         }
 
         [HttpPut("update-book-by-id/{id}")]
+        [Authorize(Roles = "Write")]
         public IActionResult UpdateBookById(int id, [FromBody] AddBookRequestDTO bookDTO)
         {
             var updateBook = _bookRepository.UpdateBookById(id, bookDTO);
             return Ok(updateBook);
         }
+
         [HttpDelete("delete-book-by-id/{id}")]
+        [Authorize(Roles = "Write")]
         public IActionResult DeleteBookById(int id)
         {
             var deleteBook = _bookRepository.DeleteBookById(id);
